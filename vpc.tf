@@ -1,7 +1,7 @@
 # CREACIÓN DEL VPC
 
 resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr_block
+  cidr_block           = var.vpc_cidr_block[terraform.workspace]
   enable_dns_support   = true
   enable_dns_hostnames = true
 }
@@ -25,26 +25,26 @@ data "aws_availability_zones" "available" {
 
 resource "aws_subnet" "public_subnet_AZ-a" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = var.cidr_public_subnet_a[terraform.workspace]
   availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
 }
 
 resource "aws_subnet" "public_subnet_AZ-b" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
+  cidr_block              = var.cidr_public_subnet_b[terraform.workspace]
   availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true
 }
 
 resource "aws_subnet" "private_subnet_AZ-a" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.11.0/24"
+  cidr_block        = var.cidr_private_subnet_a[terraform.workspace]
   availability_zone = data.aws_availability_zones.available.names[0]
 }
 
 resource "aws_subnet" "private_subnet_AZ-b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.12.0/24"
+  cidr_block        = var.cidr_private_subnet_b[terraform.workspace]
   availability_zone = data.aws_availability_zones.available.names[1]
 }
