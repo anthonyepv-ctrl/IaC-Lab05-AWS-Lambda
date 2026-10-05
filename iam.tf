@@ -2,7 +2,7 @@ data "aws_iam_policy_document" "lambda_assume" {
   statement {
     effect = "Allow"
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
     actions = ["sts:AssumeRole"]
@@ -12,17 +12,17 @@ data "aws_iam_policy_document" "lambda_assume" {
 # upload lambda
 
 resource "aws_iam_role" "upload_lambda" {
-  name = "upload-lambda-role-${terraform.workspace}"
+  name               = "upload-lambda-role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 }
 
 resource "aws_iam_role_policy_attachment" "upload_basic_exec" {
-  role = aws_iam_role.upload_lambda.name
+  role       = aws_iam_role.upload_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "upload_vpc_exec" {
-  role = aws_iam_role.upload_lambda.name
+  role       = aws_iam_role.upload_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
@@ -47,17 +47,17 @@ resource "aws_iam_role_policy" "upload_s3_put" {
 # Crop lambda 
 
 resource "aws_iam_role" "crop_lambda" {
-  name = "crop-lambda-role-${terraform.workspace}"
+  name               = "crop-lambda-role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 }
 
 resource "aws_iam_role_policy_attachment" "crop_basic_exec" {
-  role = aws_iam_role.crop_lambda.name
+  role       = aws_iam_role.crop_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "crop_vpc_exec" {
-  role = aws_iam_role.crop_lambda.name
+  role       = aws_iam_role.crop_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
@@ -86,6 +86,7 @@ resource "aws_iam_role_policy" "crop_s3_sqs" {
         Action = [
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
           "sqs:ChangeMessageVisibility"
         ]
         Resource = aws_sqs_queue.image_queue.arn
