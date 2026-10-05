@@ -1,81 +1,95 @@
-resource "aws_iam_role" "lambda_execution_role" {
-  name = "image-processor-${terraform.workspace}-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "iam-role-${terraform.workspace}"
-    Environment = terraform.workspace
-    Component   = "Security"
+data "aws_iam_policy_document" "lambda_assume" {
+  statement {
+    effect = "Allow"
+    principals {
+      type = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
   }
 }
 
-resource "aws_iam_policy" "lambda_custom_policy" {
-  name        = "image-processor-${terraform.workspace}-lambda-policy"
-  description = "Permisos extraidos estrictamente del diagrama del profesor"
+# upload lambda
+
+resource "aws_iam_role" "upload_lambda" {
+  name = "upload-lambda-role-${terraform.workspace}"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "upload_basic_exec" {
+  role = aws_iam_role.upload_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "upload_vpc_exec" {
+  role = aws_iam_role.upload_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "upload_s3_put" {
+  name = "upload-s3-policy-${terraform.workspace}"
+  role = aws_iam_role.upload_lambda.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "S3Access"
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
           "s3:PutObject"
         ]
-        Resource = [
-          "arn:aws:s3:::image-processor-${terraform.workspace}-*-bucket",
-          "arn:aws:s3:::image-processor-${terraform.workspace}-*-bucket/*"
-        ]
-      },
-      # diagrama pide 3 sqs: ReceiveMessage, DeleteMessage y ChangeMessageVisibility (pita mira en la parte de crop-lamba)
+        Resource = "${aws_s3_bucket.images.arn}/uploads/*"
+      }
+    ]
+  })
+}
+
+# Crop lambda 
+
+resource "aws_iam_role" "crop_lambda" {
+  name = "crop-lambda-role-${terraform.workspace}"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "crop_basic_exec" {
+  role = aws_iam_role.crop_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "crop_vpc_exec" {
+  role = aws_iam_role.crop_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "crop_s3_sqs" {
+  name = "crop-s3-sqs-policy-${terraform.workspace}"
+  role = aws_iam_role.crop_lambda.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
-        Sid    = "SQSAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "${aws_s3_bucket.images.arn}/uploads/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject"
+        ]
+        Resource = "${aws_s3_bucket.images.arn}/processed/*"
+      },
+      {
         Effect = "Allow"
         Action = [
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:ChangeMessageVisibility"
         ]
-        Resource = [
-          "arn:aws:sqs:us-east-1:*:image-processor-${terraform.workspace}-*"
-        ]
-      },
-
-      {
-        Sid    = "CloudWatchLogs"
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = [
-          "arn:aws:logs:us-east-1:*:log-group:/aws/lambda/image-processor-${terraform.workspace}-*:*"
-        ]
+        Resource = aws_sqs_queue.image_queue.arn
       }
     ]
   })
-
-  tags = {
-    Name        = "iam-policy-${terraform.workspace}"
-    Environment = terraform.workspace
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
-  role       = aws_iam_role.lambda_execution_role.name
-  policy_arn = aws_iam_policy.lambda_custom_policy.arn
 }
