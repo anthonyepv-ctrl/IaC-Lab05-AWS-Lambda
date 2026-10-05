@@ -28,18 +28,18 @@ data "aws_availability_zones" "available" {
 #CREACIÓN DE SUBNETS PÚBLICAS Y PRIVADAS
 
 resource "aws_subnet" "public_subnet_AZ-a" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.cidr_public_subnet_a[terraform.workspace]
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.cidr_public_subnet_a[terraform.workspace]
+  availability_zone = data.aws_availability_zones.available.names[0]
   tags = {
     Name = "public_subnet_AZ-a_${terraform.workspace}"
   }
 }
 
 resource "aws_subnet" "public_subnet_AZ-b" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.cidr_public_subnet_b[terraform.workspace]
-  availability_zone       = data.aws_availability_zones.available.names[1]
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.cidr_public_subnet_b[terraform.workspace]
+  availability_zone = data.aws_availability_zones.available.names[1]
   tags = {
     Name = "public_subnet_AZ-b_${terraform.workspace}"
   }
