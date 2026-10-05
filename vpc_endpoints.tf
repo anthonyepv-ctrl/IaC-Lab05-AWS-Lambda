@@ -14,15 +14,8 @@ resource "aws_vpc_endpoint" "s3" {
       {
         Effect    = "Allow"
         Principal = "*"
-        Action = [
-          "s3:ListBucket",
-          "s3:GetObject",
-          "s3:PutObject",
-        ]
-        Resource = [
-          aws_s3_bucket.images.arn,
-          "${aws_s3_bucket.images.arn}/*",
-        ]
+        Action    = ["s3:GetObject", "s3:PutObject"]
+        Resource  = "${aws_s3_bucket.images.arn}/*"
       }
     ]
   })
