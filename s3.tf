@@ -5,6 +5,11 @@ resource "random_id" "bucket_suffix" {
 resource "aws_s3_bucket" "images" {
   bucket        = "image-processor-${terraform.workspace}-images-${random_id.bucket_suffix.hex}"
   force_destroy = true # permite terraform destroy aunque el bucket tenga imágenes y versiones
+  tags = {
+
+    Name        = "images-${terraform.workspace}"
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_s3_bucket_versioning" "images_versioning" {

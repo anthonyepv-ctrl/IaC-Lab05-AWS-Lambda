@@ -1,6 +1,10 @@
 resource "aws_sqs_queue" "image_dlq" {
   name                      = "image-processor-${terraform.workspace}-image-dlq"
   message_retention_seconds = 1209600 # 14 días
+  tags = {
+    Name        = "image-dlq-${terraform.workspace}"
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_sqs_queue" "image_queue" {
@@ -8,6 +12,10 @@ resource "aws_sqs_queue" "image_queue" {
   visibility_timeout_seconds = 360   # 6 x timeout de Lambda Crop (60 s)
   message_retention_seconds  = 86400 # 1 día
   receive_wait_time_seconds  = 20    # Long polling
+  tags = {
+    Name        = "image-queue-${terraform.workspace}"
+    Environment = terraform.workspace
+  }
 }
 
 resource "aws_sqs_queue_redrive_policy" "image_queue_redrive" {
